@@ -1,0 +1,133 @@
+services:
+  api:
+    image: jhumanj/opnform-api:latest
+    container_name: opnform-api
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+      args:
+        APP_ENV: production
+        COMPOSER_FLAGS: --no-dev
+    volumes:
+      - ./api/storage:/usr/share/nginx/html/storage:rw
+    environment:
+      APP_ENV: production
+      IS_API_WORKER: "false"
+      DB_HOST: db
+      REDIS_HOST: redis
+      DB_DATABASE: ${DB_DATABASE:-forge}
+      DB_USERNAME: ${DB_USERNAME:-forge}
+      DB_PASSWORD: ${DB_PASSWORD:-forge}
+      DB_CONNECTION: ${DB_CONNECTION:-pgsql}
+      FILESYSTEM_DISK: local
+      LOCAL_FILESYSTEM_VISIBILITY: public
+    env_file: 
+      - ./api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  api-worker:
+    image: jhumanj/opnform-api:latest
+    container_name: opnform-api-worker
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+      args:
+        APP_ENV: production
+        COMPOSER_FLAGS: --no-dev
+    command: ["php", "artisan", "queue:work"]
+    volumes:
+      - ./api/storage:/usr/share/nginx/html/storage:rw
+    environment:
+      APP_ENV: production
+      IS_API_WORKER: "true"
+      DB_HOST: db
+      REDIS_HOST: redis
+      DB_DATABASE: ${DB_DATABASE:-forge}
+      DB_USERNAME: ${DB_USERNAME:-forge}
+      DB_PASSWORD: ${DB_PASSWORD:-forge}
+      DB_CONNECTION: ${DB_CONNECTION:-pgsql}
+      FILESYSTEM_DISK: local
+      LOCAL_FILESYSTEM_VISIBILITY: public
+    env_file: 
+      - ./api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  api-scheduler:
+    image: jhumanj/opnform-api:latest
+    container_name: opnform-api-scheduler
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+      args:
+        APP_ENV: production
+        COMPOSER_FLAGS: --no-dev
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - ./api/storage:/usr/share/nginx/html/storage:rw
+    environment:
+      APP_ENV: production
+      IS_API_WORKER: "true"
+      DB_HOST: db
+      REDIS_HOST: redis
+      DB_DATABASE: ${DB_DATABASE:-forge}
+      DB_USERNAME: ${DB_USERNAME:-forge}
+      DB_PASSWORD: ${DB_PASSWORD:-forge}
+      DB_CONNECTION: ${DB_CONNECTION:-pgsql}
+      FILESYSTEM_DISK: local
+      LOCAL_FILESYSTEM_VISIBILITY: public
+      CONTAINER_ROLE: scheduler
+      PHP_MEMORY_LIMIT: 512M
+      PHP_MAX_EXECUTION_TIME: 60
+    env_file: 
+      - ./api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  ui:
+    image: jhumanj/opnform-client:latest
+    container_name: opnform-client
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.client
+    env_file: 
+      - ./client/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  redis:
+    image: redis:7
+    container_name: opnform-redis
+
+  db:
+    image: postgres:16
+    container_name: opnform-db
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-forge}
+      POSTGRES_USER: ${DB_USERNAME:-forge}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-forge}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-forge}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
+  opnform_storage:
