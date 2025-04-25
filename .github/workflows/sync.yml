@@ -22,3 +22,9 @@ jobs:
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
           upstream_sync_repo: JhumanJ/OpnForm
           upstream_sync_branch: main
+
+      - name: Remove unwanted workflow file
+        run: |
+          git rm --cached .github/workflows/dockerhub.yml || true
+          git commit -m "Remove dockerhub workflow" || echo "No changes to commit"
+          git push || echo "No changes to push"
