@@ -29,7 +29,7 @@ services:
       redis:
         condition: service_started
     ports:
-      - "8000:8000"
+      - "8078:8000"
 
   api-worker:
     image: jhumanj/opnform-api:latest
