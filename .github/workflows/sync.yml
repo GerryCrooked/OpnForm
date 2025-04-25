@@ -1,0 +1,24 @@
+name: Upstream Sync
+
+on:
+  schedule:
+    - cron: '0 7 * * 1,4'  # Jeden Montag und Donnerstag um 07:00 UTC
+  workflow_dispatch:       # Manuelles Auslösen möglich
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Fork
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Sync with Upstream
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
+        with:
+          target_sync_branch: main
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          upstream_sync_repo: JhumanJ/OpnForm
+          upstream_sync_branch: main
