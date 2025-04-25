@@ -23,6 +23,11 @@ jobs:
           upstream_sync_repo: JhumanJ/OpnForm
           upstream_sync_branch: main
 
+      - name: Configure Git User
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Remove unwanted workflow files
         run: |
           files_to_remove=(
